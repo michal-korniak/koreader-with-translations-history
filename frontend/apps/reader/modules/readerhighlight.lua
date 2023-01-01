@@ -1494,6 +1494,25 @@ dbg:guard(ReaderHighlight, "translate",
 
 function ReaderHighlight:onTranslateText(text, page, index)
     Translator:showTranslation(text, false, false, true, page, index)
+    local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
+    if book_title == "" then -- no or empty metadata title
+        if self.ui.document and self.ui.document.file then
+            local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
+            book_title = util.splitFileNameSuffix(filename)
+        end
+    end
+
+    local LuaData = require("luadata")
+    local DataStorage = require("datastorage")
+    local lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
+    self.ui:handleEvent(Event:new("WordLookedUp", text, book_title))
+    if not self.disable_lookup_history then
+        lookup_history:addTableItem("lookup_history", {
+            book_title = book_title,
+            time = os.time(),
+            word = text,
+        })
+    end
 end
 
 function ReaderHighlight:onHoldRelease()

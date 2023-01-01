@@ -30,7 +30,6 @@ local T = ffiUtil.template
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()
 local available_ifos = nil
-local lookup_history = nil
 
 local function getIfosInDir(path)
     -- Get all the .ifo under directory path.
@@ -153,10 +152,6 @@ function ReaderDictionary:init()
     end
     -- Prepare the -u options to give to sdcv the dictionary order and if some are disabled
     self:updateSdcvDictNamesOptions()
-
-    if not lookup_history then
-        lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", "LookupHistory")
-    end
 end
 
 function ReaderDictionary:sortAvailableIfos()
@@ -213,9 +208,11 @@ function ReaderDictionary:addToMainMenu(menu_items)
     menu_items.dictionary_lookup_history = {
         text = _("Dictionary lookup history"),
         enabled_func = function()
+            local lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
             return lookup_history:has("lookup_history")
         end,
         callback = function()
+            local lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
             local lookup_history_table = lookup_history:readSetting("lookup_history")
             local kv_pairs = {}
             local previous_title
@@ -293,10 +290,12 @@ function ReaderDictionary:addToMainMenu(menu_items)
             {
                 text = _("Clean dictionary lookup history"),
                 enabled_func = function()
+                    local lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
                     return lookup_history:has("lookup_history")
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
+                    local lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
                     UIManager:show(ConfirmBox:new{
                         text = _("Clean dictionary lookup history?"),
                         ok_text = _("Clean"),
@@ -910,6 +909,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
     -- Event for plugin to catch lookup with book title
     self.ui:handleEvent(Event:new("WordLookedUp", word, book_title))
     if not self.disable_lookup_history then
+        local lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
         lookup_history:addTableItem("lookup_history", {
             book_title = book_title,
             time = os.time(),
